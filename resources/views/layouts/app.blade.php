@@ -365,7 +365,7 @@
                     </div>
                     <div class="col-md-6 text-md-end text-center">
                         <small class="text-muted">
-                            <i class="fas fa-heart text-danger"></i> Développé avec Laravel
+                             Développé avec Laravel
                         </small>
                     </div>
                 </div>

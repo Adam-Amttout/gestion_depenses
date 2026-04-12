@@ -60,22 +60,37 @@ class TransactionController extends Controller
     }
     
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'amount' => 'required|numeric|min:0.01',
-            'description' => 'nullable|string|max:500',
-            'date' => 'required|date',
-            'type' => 'required|in:income,expense'
-        ]);
-        
-        $validated['user_id'] = session('user_id');
-        
-        Transaction::create($validated);
-        
-        return redirect()->route('transactions.index')
-            ->with('success', 'Transaction ajoutée avec succès!');
+{
+    $validated = $request->validate([
+        'category_id' => 'required|exists:categories,id',
+        'amount' => 'required|numeric|min:0.01',
+        'description' => 'nullable|string|max:500',
+        'date' => 'required|date',
+        'type' => 'required|in:income,expense'
+    ]);
+
+    $userId = session('user_id');
+
+    // 🔴 Vérification du solde pour une dépense
+    if ($request->type === 'expense') {
+        // Calcul du solde actuel
+        $totalIncome = Transaction::where('user_id', $userId)->where('type', 'income')->sum('amount');
+        $totalExpense = Transaction::where('user_id', $userId)->where('type', 'expense')->sum('amount');
+        $currentBalance = $totalIncome - $totalExpense;
+
+        if ($request->amount > $currentBalance) {
+            return redirect()->back()
+                ->with('error', "❌ Solde insuffisant ! Votre solde actuel est de {$currentBalance} DH. Vous ne pouvez pas dépenser {$request->amount} DH.")
+                ->withInput();
+        }
     }
+
+    $validated['user_id'] = $userId;
+    Transaction::create($validated);
+
+    return redirect()->route('transactions.index')
+        ->with('success', 'Transaction ajoutée avec succès!');
+}
     
     public function show(Transaction $transaction)
     {
@@ -102,26 +117,44 @@ class TransactionController extends Controller
     }
     
     public function update(Request $request, Transaction $transaction)
-    {
-        // Vérifier que la transaction appartient à l'utilisateur connecté
-        if ($transaction->user_id != session('user_id')) {
-            abort(403, 'Accès non autorisé.');
-        }
-        
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'amount' => 'required|numeric|min:0.01',
-            'description' => 'nullable|string|max:500',
-            'date' => 'required|date',
-            'type' => 'required|in:income,expense'
-        ]);
-        
-        $transaction->update($validated);
-        
-        return redirect()->route('transactions.index')
-            ->with('success', 'Transaction modifiée avec succès!');
+{
+    // Vérifier que la transaction appartient à l'utilisateur connecté
+    if ($transaction->user_id != session('user_id')) {
+        abort(403, 'Accès non autorisé.');
     }
-    
+
+    $validated = $request->validate([
+        'category_id' => 'required|exists:categories,id',
+        'amount' => 'required|numeric|min:0.01',
+        'description' => 'nullable|string|max:500',
+        'date' => 'required|date',
+        'type' => 'required|in:income,expense'
+    ]);
+
+    $userId = session('user_id');
+
+    // 🔴 Vérification du solde pour une dépense modifiée
+    if ($request->type === 'expense') {
+        // Calcul du solde actuel (incluant l'ancienne dépense)
+        $totalIncome = Transaction::where('user_id', $userId)->where('type', 'income')->sum('amount');
+        $totalExpense = Transaction::where('user_id', $userId)->where('type', 'expense')->sum('amount');
+        $currentBalance = $totalIncome - $totalExpense;
+
+        // Solde avant la prise en compte de l'ancienne dépense
+        $balanceBeforeUpdate = $currentBalance + $transaction->amount;
+
+        if ($request->amount > $balanceBeforeUpdate) {
+            return redirect()->back()
+                ->with('error', "❌ Solde insuffisant pour cette modification ! Solde disponible avant modification : {$balanceBeforeUpdate} DH.")
+                ->withInput();
+        }
+    }
+
+    $transaction->update($validated);
+
+    return redirect()->route('transactions.index')
+        ->with('success', 'Transaction modifiée avec succès!');
+}
     public function destroy(Transaction $transaction)
     {
         // Vérifier que la transaction appartient à l'utilisateur connecté

@@ -9,10 +9,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
-class UserManagementController extends Controller
+class UserController extends Controller
 {
     /**
-     * Affiche la liste des utilisateurs.
+     * Liste des utilisateurs
      */
     public function index()
     {
@@ -21,7 +21,7 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Formulaire de création.
+     * Formulaire de création
      */
     public function create()
     {
@@ -29,17 +29,17 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Enregistre un nouvel utilisateur.
+     * Enregistrer un nouvel utilisateur
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
-            'role'     => 'required|in:admin,user',
-            'phone'    => 'nullable|string|max:20',
-            'address'  => 'nullable|string|max:500',
+            'role' => 'required|in:admin,user',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -47,13 +47,13 @@ class UserManagementController extends Controller
         }
 
         User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
+            'name' => $request->name,
+            'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role'     => $request->role,
-            'phone'    => $request->phone,
-            'address'  => $request->address,
-            'is_active'=> true,
+            'role' => $request->role,
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'is_active' => true,
         ]);
 
         return redirect()->route('admin.users.index')
@@ -61,26 +61,26 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Affiche le profil d'un utilisateur (statistiques, solde, graphiques).
+     * Afficher le profil d'un utilisateur (statistiques)
      */
     public function show(User $user)
     {
-        // Statistiques financières
-        $totalIncome  = $user->transactions()->where('type', 'income')->sum('amount');
+        // Statistiques
+        $totalIncome = $user->transactions()->where('type', 'income')->sum('amount');
         $totalExpense = $user->transactions()->where('type', 'expense')->sum('amount');
-        $balance      = $user->balance;
-
+        $balance = $user->balance;
+        
         // Dernières transactions
         $recentTransactions = $user->transactions()->with('category')->latest()->take(10)->get();
-
-        // Dépenses par catégorie (pour le graphique)
+        
+        // Dépenses par catégorie (pour graphique)
         $expensesByCategory = $user->transactions()
             ->where('type', 'expense')
             ->selectRaw('category_id, SUM(amount) as total')
             ->with('category')
             ->groupBy('category_id')
             ->get();
-
+            
         // Revenus par catégorie
         $incomesByCategory = $user->transactions()
             ->where('type', 'income')
@@ -96,7 +96,7 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Formulaire d'édition.
+     * Formulaire d'édition
      */
     public function edit(User $user)
     {
@@ -104,16 +104,16 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Met à jour un utilisateur.
+     * Mettre à jour un utilisateur
      */
     public function update(Request $request, User $user)
     {
         $validator = Validator::make($request->all(), [
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'role'     => 'required|in:admin,user',
-            'phone'    => 'nullable|string|max:20',
-            'address'  => 'nullable|string|max:500',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'role' => 'required|in:admin,user',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
             'password' => 'nullable|string|min:6|confirmed',
         ]);
 
@@ -122,10 +122,10 @@ class UserManagementController extends Controller
         }
 
         $data = [
-            'name'    => $request->name,
-            'email'   => $request->email,
-            'role'    => $request->role,
-            'phone'   => $request->phone,
+            'name' => $request->name,
+            'email' => $request->email,
+            'role' => $request->role,
+            'phone' => $request->phone,
             'address' => $request->address,
         ];
 
@@ -140,16 +140,10 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Active/désactive un utilisateur.
+     * Désactiver/Activer un utilisateur
      */
-    public function toggleStatus(User $user)
+    public function toggle(User $user)
     {
-        // Empêcher de désactiver son propre compte
-        if ($user->id == session('user_id')) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'Vous ne pouvez pas modifier votre propre statut.');
-        }
-
         $user->is_active = !$user->is_active;
         $user->save();
 
@@ -159,7 +153,7 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Supprime un utilisateur (et ses données en cascade).
+     * Supprimer un utilisateur (et ses données en cascade)
      */
     public function destroy(User $user)
     {
@@ -172,6 +166,6 @@ class UserManagementController extends Controller
         $user->delete();
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'Utilisateur supprimé avec succès.');
+            ->with('success', 'Utilisateur supprimé.');
     }
 }

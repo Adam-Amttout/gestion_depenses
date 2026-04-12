@@ -33,19 +33,21 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('transactions', TransactionController::class);
     Route::post('transactions/bulk-delete', [TransactionController::class, 'bulkDelete'])->name('transactions.bulk-delete');
     
-    // Categories
+    // Catégories
     Route::resource('categories', CategoryController::class);
     
     // Budgets
     Route::resource('budgets', BudgetController::class);
     
-    // Reports
+    // Rapports
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::post('reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
     
-    // Admin routes
+    // Routes Admin (protégées par middleware 'admin')
     Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function () {
+        // CRUD complet pour les utilisateurs
         Route::resource('users', UserManagementController::class);
+        // Route pour activer/désactiver un utilisateur
         Route::get('users/{user}/toggle', [UserManagementController::class, 'toggleStatus'])->name('users.toggle');
     });
 });

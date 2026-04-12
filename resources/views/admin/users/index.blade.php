@@ -20,8 +20,9 @@
                         <th>Nom</th>
                         <th>Email</th>
                         <th>Rôle</th>
-                        <th>Status</th>
+                        <th>Statut</th>
                         <th>Transactions</th>
+                        <th>Solde (DH)</th>
                         <th>Inscrit le</th>
                         <th>Actions</th>
                     </tr>
@@ -43,8 +44,14 @@
                             </span>
                         </td>
                         <td>{{ $user->transactions_count }}</td>
+                        <td class="{{ $user->balance >= 0 ? 'text-success' : 'text-danger' }}">
+                            {{ number_format($user->balance, 2) }}
+                        </td>
                         <td>{{ $user->created_at->format('d/m/Y') }}</td>
                         <td>
+                            <a href="{{ route('admin.users.show', $user) }}" class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i>
+                            </a>
                             <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-warning">
                                 <i class="fas fa-edit"></i>
                             </a>

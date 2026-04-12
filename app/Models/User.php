@@ -11,29 +11,29 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'is_active', 'last_login_at'
+        'name', 'email', 'password', 'role', 'avatar', 'is_active', 'phone', 'address',
     ];
 
-    protected $hidden = [
-        'password', 'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'is_active' => 'boolean',
-        'last_login_at' => 'datetime',
     ];
 
-    // Vérifier si l'utilisateur est admin
     public function isAdmin()
     {
         return $this->role === 'admin';
     }
 
-    // Vérifier si l'utilisateur est actif
-    public function isActive()
+    /**
+     * Calcul du solde (revenus - dépenses)
+     */
+    public function getBalanceAttribute()
     {
-        return $this->is_active;
+        $totalIncome = $this->transactions()->where('type', 'income')->sum('amount');
+        $totalExpense = $this->transactions()->where('type', 'expense')->sum('amount');
+        return $totalIncome - $totalExpense;
     }
 
     // Relations
@@ -50,5 +50,15 @@ class User extends Authenticatable
     public function budgets()
     {
         return $this->hasMany(Budget::class);
+    }
+
+    public function savingsGoals()
+    {
+        return $this->hasMany(SavingsGoal::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
     }
 }
