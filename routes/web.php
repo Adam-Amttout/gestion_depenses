@@ -42,6 +42,8 @@ Route::middleware(['auth'])->group(function () {
     // Rapports
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::post('reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
+    // Dans le groupe middleware auth
+Route::post('reports/print', [ReportController::class, 'printReport'])->name('reports.print');   
     
     // Routes Admin (protégées par middleware 'admin')
     Route::prefix('admin')->name('admin.')->middleware(['admin'])->group(function () {

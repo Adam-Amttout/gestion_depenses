@@ -48,6 +48,30 @@ class ReportController extends Controller
             return view('reports.category', compact('data', 'year'));
         }
     }
+
+    /**
+     * Version imprimable d'un rapport (sans layout, avec style d'impression)
+     */
+    public function printReport(Request $request)
+    {
+        $userId = session('user_id');
+        $reportType = $request->report_type;
+        $year = $request->year;
+        $month = $request->month;
+
+        if($reportType == 'monthly') {
+            $data = $this->getMonthlyReport($userId, $year, $month);
+            return view('reports.printable', compact('data', 'year', 'month', 'reportType'));
+        }
+        elseif($reportType == 'yearly') {
+            $data = $this->getYearlyReport($userId, $year);
+            return view('reports.printable', compact('data', 'year', 'reportType'));
+        }
+        elseif($reportType == 'category') {
+            $data = $this->getCategoryReport($userId, $year);
+            return view('reports.printable', compact('data', 'year', 'reportType'));
+        }
+    }
     
     private function getMonthlyReport($userId, $year, $month)
     {
